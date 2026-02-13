@@ -4,7 +4,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 include("db_connect.php");
 
-$error_message = ""; // Initialize an error message variable
+$error_message = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST["email"]);
@@ -25,13 +25,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             if ($result->num_rows == 1) {
                 $user = $result->fetch_assoc();
-                if (password_verify($password, $user["password"])) {
+
+                if (!isset($user["status"]) || $user["status"] !== "active") {
+                    $error_message = "Your account is pending approval by rector.";
+                } elseif (!in_array($user["user_type"], ["student", "rector"], true)) {
+                    $error_message = "Invalid account role.";
+                } elseif (password_verify($password, $user["password"])) {
                     $_SESSION["user_id"] = $user["user_id"];
                     $_SESSION["user_type"] = $user["user_type"];
                     $_SESSION["username"] = $user["name"];
 
-                    if ($user["user_type"] == "admin") {
-                        header("Location: admin_dashboard.php");
+                    if ($user["user_type"] === "rector") {
+                        header("Location: rector_dashboard.php");
                     } else {
                         header("Location: sdashboard.php");
                     }
@@ -64,10 +69,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <form method="POST" action="">
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" required>
-            
+
             <label for="password">Password:</label>
             <input type="password" id="password" name="password" required>
-            
+
             <button type="submit">Login</button>
         </form>
         <a href="register.php">Don't have an account? Register here</a>
