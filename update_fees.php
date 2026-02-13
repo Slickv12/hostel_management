@@ -1,24 +1,61 @@
 <?php
+session_start();
 include("db_connect.php"); // Database connection
+
+if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'rector') {
+    header("Location: login.php");
+    exit();
+}
 
 $message = ""; // To show success/error messages
 
 // Check if the form is submitted to update fees
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["update_fee"])) {
-    $user_id = $_POST["user_id"];
+    $user_id = intval($_POST["user_id"]);
     $amount_due = $_POST["amount_due"];
     $due_date = $_POST["due_date"];
     $status = $_POST["status"];
+    $actor_user_id = intval($_SESSION['user_id']);
 
-    $update_query = "UPDATE fees SET amount_due = ?, due_date = ?, status = ? WHERE user_id = ?";
-    $stmt = $conn->prepare($update_query);
-    $stmt->bind_param("dssi", $amount_due, $due_date, $status, $user_id);
+    // Validate target user is an existing student
+    $user_check_query = "SELECT user_id FROM users WHERE user_id = ? AND user_type = 'student'";
+    $user_stmt = $conn->prepare($user_check_query);
+    $user_stmt->bind_param("i", $user_id);
+    $user_stmt->execute();
+    $user_result = $user_stmt->get_result();
 
-    if ($stmt->execute()) {
-        $message = "<div class='message-box success-msg' onclick='this.style.display=\"none\";'>Fee details updated successfully!</div>";
+    if ($user_result->num_rows !== 1) {
+        $message = "<div class='message-box error-msg' onclick='this.style.display=\"none\";'>Invalid student user ID.</div>";
     } else {
-        $message = "<div class='message-box error-msg' onclick='this.style.display=\"none\";'>Error updating fees: " . $conn->error . "</div>";
+        $conn->begin_transaction();
+
+        $update_query = "UPDATE fees SET amount_due = ?, due_date = ?, status = ? WHERE user_id = ?";
+        $stmt = $conn->prepare($update_query);
+        $stmt->bind_param("dssi", $amount_due, $due_date, $status, $user_id);
+
+        if ($stmt->execute()) {
+            $log_query = "INSERT INTO activity_logs (action_type, actor_user_id, target_user_id, metadata) VALUES ('fee_update', ?, ?, NULL)";
+            $log_stmt = $conn->prepare($log_query);
+            $log_stmt->bind_param("ii", $actor_user_id, $user_id);
+
+            if ($log_stmt->execute()) {
+                $conn->commit();
+                $message = "<div class='message-box success-msg' onclick='this.style.display=\"none\";'>Fee details updated successfully!</div>";
+            } else {
+                $conn->rollback();
+                $message = "<div class='message-box error-msg' onclick='this.style.display=\"none\";'>Error logging fee update.</div>";
+            }
+
+            $log_stmt->close();
+        } else {
+            $conn->rollback();
+            $message = "<div class='message-box error-msg' onclick='this.style.display=\"none\";'>Error updating fees: " . $conn->error . "</div>";
+        }
+
+        $stmt->close();
     }
+
+    $user_stmt->close();
 }
 
 // Fetch fee details if user_id is provided
@@ -52,7 +89,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["fetch_fee"])) {
 <div class="dashboard-container">
     <!-- Sidebar -->
     <div class="sidebar">
-        <h2>Admin Panel</h2>
+        <h2>Rector Panel</h2>
         <ul>
         <li><a href="check_rooms.php">Check Rooms</a></li>
             <li><a href="check_students.php">Check Students</a></li>
