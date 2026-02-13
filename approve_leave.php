@@ -2,35 +2,64 @@
 session_start();
 include("db_connect.php");
 
-// Check if the admin is logged in
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
-    header("Location: ../login.php");
+if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'rector') {
+    header("Location: login.php");
     exit();
 }
 
-// Handle Approval/Rejection
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['request_id'])) {
+$message = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['request_id'], $_POST['action'])) {
     $request_id = intval($_POST['request_id']);
+    $rector_id = intval($_SESSION['user_id']);
     $status = $_POST['action'] === "approve" ? "approved" : "rejected";
+    $action_type = $status === 'approved' ? 'leave_approved' : 'leave_rejected';
 
-    $sql = "UPDATE leave_requests SET status = ? WHERE request_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("si", $status, $request_id);
+    // Resolve target student from leave request first
+    $target_sql = "SELECT user_id FROM leave_requests WHERE request_id = ?";
+    $target_stmt = $conn->prepare($target_sql);
+    $target_stmt->bind_param("i", $request_id);
+    $target_stmt->execute();
+    $target_result = $target_stmt->get_result();
+    $target = $target_result->fetch_assoc();
+    $target_stmt->close();
 
-    if ($stmt->execute()) {
-        $message = "Request has been $status successfully!";
+    if (!$target) {
+        $message = "Leave request not found.";
     } else {
-        $message = "Error updating request: " . $conn->error;
-    }
+        $target_user_id = intval($target['user_id']);
 
-    $stmt->close();
+        $conn->begin_transaction();
+
+        $sql = "UPDATE leave_requests SET status = ?, approved_by = ?, approved_at = CURRENT_TIMESTAMP WHERE request_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("sii", $status, $rector_id, $request_id);
+
+        if ($stmt->execute() && $stmt->affected_rows >= 1) {
+            $log_sql = "INSERT INTO activity_logs (action_type, actor_user_id, target_user_id) VALUES (?, ?, ?)";
+            $log_stmt = $conn->prepare($log_sql);
+            $log_stmt->bind_param("sii", $action_type, $rector_id, $target_user_id);
+
+            if ($log_stmt->execute()) {
+                $conn->commit();
+                $message = "Request has been $status successfully!";
+            } else {
+                $conn->rollback();
+                $message = "Error logging leave action.";
+            }
+
+            $log_stmt->close();
+        } else {
+            $conn->rollback();
+            $message = "Error updating request.";
+        }
+
+        $stmt->close();
+    }
 }
 
-// Fetch all leave requests
-$sql = "SELECT request_id, user_id, reason, start_date, end_date, status FROM leave_requests";
+$sql = "SELECT request_id, user_id, reason, start_date, end_date, status, approved_by, approved_at FROM leave_requests ORDER BY request_id DESC";
 $result = $conn->query($sql);
-
-$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -45,9 +74,10 @@ $conn->close();
 
 <div class="dashboard-container">
 <div class="sidebar">
-        <h2>Admin Dashboard</h2>
+        <h2>Rector Dashboard</h2>
         <ul>
-        <li><a href="check_rooms.php">Check Rooms</a></li>
+            <li><a href="approve_students.php">Approve Students</a></li>
+            <li><a href="check_rooms.php">Check Rooms</a></li>
             <li><a href="check_students.php">Check Students</a></li>
             <li><a href="manage_students.php">Manage Students</a></li>
             <li><a href="send_notices.php">Send Notice</a></li>
@@ -70,21 +100,22 @@ $conn->close();
                         <th>Start Date</th>
                         <th>End Date</th>
                         <th>Status</th>
+                        <th>Approved By</th>
+                        <th>Approved At</th>
                     </tr>
                 </thead>
                 <tbody id="requestTable">
                     <?php while ($row = $result->fetch_assoc()): ?>
-                        <tr onclick="selectRequest(<?php echo $row['request_id']; ?>, this)" 
+                        <tr onclick="selectRequest(<?php echo (int)$row['request_id']; ?>, this)"
                             class="<?php echo ($row['status'] == 'pending') ? 'pending' : strtolower($row['status']); ?>">
-                            <td><?php echo $row['request_id']; ?></td>
-                            <td><?php echo $row['user_id']; ?></td>
-                            <td><?php echo $row['reason']; ?></td>
-                            <td><?php echo $row['start_date']; ?></td>
-                            <td><?php echo $row['end_date']; ?></td>
-                            <td class="<?php echo strtolower($row['status']); ?>">
-                                 <?php echo ucfirst($row['status']); ?>
-                            </td>
-
+                            <td><?php echo htmlspecialchars($row['request_id']); ?></td>
+                            <td><?php echo htmlspecialchars($row['user_id']); ?></td>
+                            <td><?php echo htmlspecialchars($row['reason']); ?></td>
+                            <td><?php echo htmlspecialchars($row['start_date']); ?></td>
+                            <td><?php echo htmlspecialchars($row['end_date']); ?></td>
+                            <td class="<?php echo strtolower($row['status']); ?>"><?php echo ucfirst($row['status']); ?></td>
+                            <td><?php echo htmlspecialchars($row['approved_by'] ?? ''); ?></td>
+                            <td><?php echo htmlspecialchars($row['approved_at'] ?? ''); ?></td>
                         </tr>
                     <?php endwhile; ?>
                 </tbody>
@@ -98,7 +129,7 @@ $conn->close();
 
             <?php if (!empty($message)): ?>
                 <div class="message-box <?php echo (strpos($message, 'successfully') !== false) ? 'success-msg' : 'error-msg'; ?>" id="messageBox" onclick="this.style.display='none';">
-                    <?php echo $message; ?>
+                    <?php echo htmlspecialchars($message); ?>
                 </div>
 
                 <script>
