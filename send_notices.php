@@ -10,32 +10,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'rector') {
 $rector_id = intval($_SESSION['user_id']);
 $message = "";
 
-// Ensure activity_logs ENUM contains notice actions
-$enum_query = "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'activity_logs' AND COLUMN_NAME = 'action_type'";
-$enum_result = $conn->query($enum_query);
-if ($enum_result && $enum_result->num_rows === 1) {
-    $enum_row = $enum_result->fetch_assoc();
-    $column_type = $enum_row['COLUMN_TYPE'];
 
-    preg_match_all("/'([^']+)'/", $column_type, $matches);
-    $enum_values = $matches[1];
-
-    $required_actions = ['notice_created', 'notice_updated', 'notice_deleted'];
-    $needs_update = false;
-
-    foreach ($required_actions as $action) {
-        if (!in_array($action, $enum_values, true)) {
-            $enum_values[] = $action;
-            $needs_update = true;
-        }
-    }
-
-    if ($needs_update) {
-        $escaped = array_map(function ($value) use ($conn) {
-            return "'" . $conn->real_escape_string($value) . "'";
-        }, $enum_values);
-
-        $alter_sql = "ALTER TABLE activity_logs MODIFY COLUMN action_type ENUM(" . implode(',', $escaped) . ") NOT NULL";
         $conn->query($alter_sql);
     }
 }
@@ -241,3 +216,4 @@ $notices_result = $conn->query($notices_sql);
 
 </body>
 </html>
+
