@@ -1,16 +1,25 @@
 <?php
 session_start();
 include("db_connect.php");
-if (!isset($_SESSION["user_id"]) || $_SESSION["user_type"] !== "admin") {
+if (!isset($_SESSION["user_id"]) || $_SESSION["user_type"] !== "rector") {
     header("Location: login.php");
     exit();
 }
 
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
+if ($search !== '') {
+    $like = "%{$search}%";
+    $sql = "SELECT user_id, name, email, phone, address FROM users WHERE user_type = 'student' AND (name LIKE ? OR email LIKE ? OR phone LIKE ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sss", $like, $like, $like);
+} else {
+    $sql = "SELECT user_id, name, email, phone, address FROM users WHERE user_type = 'student'";
+    $stmt = $conn->prepare($sql);
+}
 
-// Fetch all students
-$sql = "SELECT user_id, name, email, phone, address FROM users WHERE user_type = 'student'";
-$result = $conn->query($sql);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -25,25 +34,19 @@ $result = $conn->query($sql);
 
 <div class="dashboard-container">
     <!-- Sidebar -->
-    <div class="sidebar">
-        <h2>Admin Panel</h2>
-        <ul>
-            
-        <li><a href="check_rooms.php">Check Rooms</a></li>
-            <li><a href="check_students.php">Check Students</a></li>
-            <li><a href="manage_students.php">Manage Students</a></li>
-            <li><a href="send_notices.php">Send Notice</a></li>
-            <li><a href="approve_leave.php">Approve Leave</a></li>
-            <li><a href="assign_room.php">Assign rooms</a></li>
-            <li><a href="update_fees.php">Update fees</a></li>
-            <li><a href="logout.php">Logout</a></li>
-        </ul>
-    </div>
+    <?php include("rector_sidebar.php"); ?>
 
     <!-- Main Content -->
     <div class="content">
         <div class="content-box">
             <h2>Registered Students</h2>
+
+            <form method="GET">
+                <label for="search">Search (Name / Email / Phone):</label>
+                <input type="text" id="search" name="search" value="<?php echo htmlspecialchars($search); ?>">
+                <button type="submit">Search</button>
+            </form>
+
             <table border="1">
                 <thead>
                     <tr>
@@ -67,7 +70,7 @@ $result = $conn->query($sql);
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="3">No students found</td>
+                            <td colspan="5">No students found</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -80,5 +83,6 @@ $result = $conn->query($sql);
 </html>
 
 <?php
+$stmt->close();
 $conn->close();
 ?>
