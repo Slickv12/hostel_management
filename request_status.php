@@ -78,7 +78,7 @@ $result = $stmt->get_result();
                             </td>
                             <td>
                                 <?php if ($row['status'] === 'pending'): ?>
-                                    <form method="POST" action="" style="margin:0;">
+                                    <form method="POST" action="request_status.php" style="margin:0;">
                                         <input type="hidden" name="cancel_request_id" value="<?= (int)$row['request_id'] ?>">
                                         <button type="submit">Cancel</button>
                                     </form>
