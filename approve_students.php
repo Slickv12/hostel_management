@@ -23,24 +23,41 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["approve_student"])) {
         $update_stmt->execute();
 
         if ($update_stmt->affected_rows === 1) {
-            $log_sql = "INSERT INTO activity_logs (action_type, actor_user_id, target_user_id) VALUES ('student_approval', ?, ?)";
-            $log_stmt = $conn->prepare($log_sql);
+            $fee_sql = "INSERT INTO fees (user_id, amount_due, due_date, status) VALUES (?, 0, NULL, 'pending')";
+            $fee_stmt = $conn->prepare($fee_sql);
 
-            if ($log_stmt) {
-                $log_stmt->bind_param("ii", $actor_user_id, $student_id);
+            if ($fee_stmt) {
+                $fee_stmt->bind_param("i", $student_id);
 
-                if ($log_stmt->execute()) {
-                    $conn->commit();
-                    $message = "Student approved successfully.";
+                if ($fee_stmt->execute()) {
+                    $log_sql = "INSERT INTO activity_logs (action_type, actor_user_id, target_user_id) VALUES ('student_approval', ?, ?)";
+                    $log_stmt = $conn->prepare($log_sql);
+
+                    if ($log_stmt) {
+                        $log_stmt->bind_param("ii", $actor_user_id, $student_id);
+
+                        if ($log_stmt->execute()) {
+                            $conn->commit();
+                            $message = "Student approved successfully.";
+                        } else {
+                            $conn->rollback();
+                            $message = "Approval failed while writing activity log.";
+                        }
+
+                        $log_stmt->close();
+                    } else {
+                        $conn->rollback();
+                        $message = "Approval failed while preparing activity log.";
+                    }
                 } else {
                     $conn->rollback();
-                    $message = "Approval failed while writing activity log.";
+                    $message = "Approval failed while creating fee record.";
                 }
 
-                $log_stmt->close();
+                $fee_stmt->close();
             } else {
                 $conn->rollback();
-                $message = "Approval failed while preparing activity log.";
+                $message = "Approval failed while preparing fee record.";
             }
         } else {
             $conn->rollback();

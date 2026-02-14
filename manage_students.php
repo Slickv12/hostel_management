@@ -10,7 +10,6 @@ if (!isset($_SESSION["user_id"]) || $_SESSION["user_type"] !== "rector") {
 // Handle Remove Student Request
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['remove_student'])) {
     $user_id = intval($_POST['user_id']);
-    $actor_user_id = intval($_SESSION['user_id']);
 
     // Check if student exists
     $check_sql = "SELECT user_id FROM users WHERE user_id = ? AND user_type = 'student'";
@@ -22,31 +21,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['remove_student'])) {
     if ($result->num_rows > 0) {
         $conn->begin_transaction();
 
-        // Delete from users table (CASCADE will also remove room allocation)
-        $delete_sql = "DELETE FROM users WHERE user_id = ?";
-        $delete_stmt = $conn->prepare($delete_sql);
-        $delete_stmt->bind_param("i", $user_id);
+        $delete_logs_sql = "DELETE FROM activity_logs WHERE actor_user_id = ? OR target_user_id = ?";
+        $delete_logs_stmt = $conn->prepare($delete_logs_sql);
+        $delete_logs_stmt->bind_param("ii", $user_id, $user_id);
 
-        if ($delete_stmt->execute() && $delete_stmt->affected_rows === 1) {
-            $log_sql = "INSERT INTO activity_logs (action_type, actor_user_id, target_user_id) VALUES ('student_deleted', ?, ?)";
-            $log_stmt = $conn->prepare($log_sql);
-            $log_stmt->bind_param("ii", $actor_user_id, $user_id);
+        if ($delete_logs_stmt->execute()) {
+            // Delete from users table (CASCADE will also remove room allocation)
+            $delete_sql = "DELETE FROM users WHERE user_id = ?";
+            $delete_stmt = $conn->prepare($delete_sql);
+            $delete_stmt->bind_param("i", $user_id);
 
-            if ($log_stmt->execute()) {
+            if ($delete_stmt->execute() && $delete_stmt->affected_rows === 1) {
                 $conn->commit();
                 $message = "Student removed successfully!";
             } else {
                 $conn->rollback();
-                $message = "Error removing student log.";
+                $message = "Error removing student.";
             }
 
-            $log_stmt->close();
+            $delete_stmt->close();
         } else {
             $conn->rollback();
-            $message = "Error removing student.";
+            $message = "Error removing student logs.";
         }
 
-        $delete_stmt->close();
+        $delete_logs_stmt->close();
     } else {
         $message = "Student not found!";
     }
