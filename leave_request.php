@@ -64,7 +64,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php if (!empty($error)) echo "<p class='error-msg'>" . htmlspecialchars($error) . "</p>"; ?>
     <?php if (!empty($success)) echo "<p class='success-msg'>" . htmlspecialchars($success) . "</p>"; ?>
 
-    <form method="POST" action="leave_request.php">
+    <form method="POST">
         <label for="reason">Reason:</label>
         <textarea name="reason" id="reason" required></textarea>
 
@@ -77,3 +77,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <button type="submit">Submit Request</button>
     </form>
 </div>
+
+
+<script>
+document.querySelectorAll("form").forEach(form => {
+    form.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        fetch("leave_request.php", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById("content-area").innerHTML = html;
+        });
+    });
+});
+</script>

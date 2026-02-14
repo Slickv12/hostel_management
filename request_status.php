@@ -66,7 +66,7 @@ $result = $stmt->get_result();
                     </td>
                     <td>
                         <?php if ($row['status'] === 'pending'): ?>
-                            <form method="POST" action="request_status.php" style="margin:0;">
+                            <form method="POST"  style="margin:0;">
                                 <input type="hidden" name="cancel_request_id" value="<?= (int)$row['request_id'] ?>">
                                 <button type="submit">Cancel</button>
                             </form>
@@ -83,3 +83,22 @@ $result = $stmt->get_result();
         <p style="text-align:center; color:gray;">No leave requests found.</p>
     <?php endif; ?>
 </div>
+
+
+<script>
+document.querySelectorAll("form").forEach(form => {
+    form.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        fetch("request_status.php", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById("content-area").innerHTML = html;
+        });
+    });
+});
+</script>
