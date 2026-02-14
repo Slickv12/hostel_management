@@ -35,7 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["approve_student"])) {
                 $fee_check_result = $fee_check_stmt->get_result();
 
                 if ($fee_check_result->num_rows === 0) {
-                    $fee_insert_sql = "INSERT INTO fees (user_id, amount_due, due_date, status) VALUES (?, 0.00, NULL, 'pending')";
+                    $fee_insert_sql = "INSERT INTO fees (user_id, amount_due, due_date, status) VALUES (?, 0.00, CURRENT_DATE, 'pending')";
                     $fee_insert_stmt = $conn->prepare($fee_insert_sql);
 
                     if ($fee_insert_stmt) {
