@@ -1,0 +1,8 @@
+/* Rector-specific lightweight overrides */
+.sidebar h2 {
+  color: #e9fcff;
+}
+
+.content h2 {
+  color: #f4fdff;
+}

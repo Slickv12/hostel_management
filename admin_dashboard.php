@@ -16,7 +16,17 @@ $admin_name = $_SESSION["username"];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="adminstyle.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <?php
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    if (isset($_SESSION['user_type'])) {
+        if ($_SESSION['user_type'] === 'rector') {
+            echo '<link rel="stylesheet" href="assets/css/rector.css">';
+        } elseif ($_SESSION['user_type'] === 'student') {
+            echo '<link rel="stylesheet" href="assets/css/student.css">';
+        }
+    }
+    ?>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>

@@ -2,6 +2,10 @@
 include("db_connect.php");
 session_start();
 
+if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'student') {
+    header("Location: login.php");
+    exit();
+}
 
 if (isset($_SESSION["success_message"]) || isset($_SESSION["error_message"])): ?>
     <div class="message-box <?= isset($_SESSION["success_message"]) ? 'success-msg' : 'error-msg' ?>" onclick="this.style.display='none';">
@@ -21,7 +25,7 @@ if (isset($_SESSION["success_message"]) || isset($_SESSION["error_message"])): ?
 $user_id = $_SESSION["user_id"];
 
 // Fetch room details
-$query = "SELECT room_id FROM users WHERE user_id = ?";
+$query = "SELECT room_id FROM room_allocation WHERE user_id = ? LIMIT 1";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -33,11 +37,6 @@ if (!$room_id) { // Only show message when no room is assigned
     echo "<div class='room-error'>No information found. Contact the admin.</div>";
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'student') {
-    header("Location: login.php");
-    exit();
-}
-
 ?>
 
 <!DOCTYPE html>
@@ -46,7 +45,17 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'student') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard</title>
-    <link rel="stylesheet" href="dashstyle.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <?php
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    if (isset($_SESSION['user_type'])) {
+        if ($_SESSION['user_type'] === 'rector') {
+            echo '<link rel="stylesheet" href="assets/css/rector.css">';
+        } elseif ($_SESSION['user_type'] === 'student') {
+            echo '<link rel="stylesheet" href="assets/css/student.css">';
+        }
+    }
+    ?>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>

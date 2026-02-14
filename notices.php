@@ -1,9 +1,15 @@
 <?php
-require 'config.php'; // Database connection
+session_start();
+include("db_connect.php");
 
-$sql = "SELECT n.admin_id, u.name AS admin_name, n.created_at, n.message 
-        FROM notices n 
-        JOIN users u ON n.admin_id = u.user_id
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_type'], ['student', 'rector'], true)) {
+    header("Location: login.php");
+    exit();
+}
+
+$sql = "SELECT n.notice_id, n.message, n.created_at, n.rector_id, u.name AS rector_name
+        FROM notices n
+        JOIN users u ON n.rector_id = u.user_id
         ORDER BY n.created_at DESC";
 $result = $conn->query($sql);
 ?>
@@ -14,28 +20,35 @@ $result = $conn->query($sql);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notices</title>
-    <link rel="stylesheet" href="dashstyle.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="assets/css/base.css">
+    <?php
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    if (isset($_SESSION['user_type'])) {
+        if ($_SESSION['user_type'] === 'rector') {
+            echo '<link rel="stylesheet" href="assets/css/rector.css">';
+        } elseif ($_SESSION['user_type'] === 'student') {
+            echo '<link rel="stylesheet" href="assets/css/student.css">';
+        }
+    }
+    ?>
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar Navigation -->
-    
-        <!-- Notices Content -->
         <div class="content">
             <div class="content-box">
                 <h2>Notices</h2>
-                <?php if ($result->num_rows > 0): ?>
+                <?php if ($result && $result->num_rows > 0): ?>
                     <table>
                         <tr>
-                            <th>Admin ID</th>
-                            <th>Admin Name</th>
+                            <th>Rector ID</th>
+                            <th>Rector Name</th>
                             <th>Time</th>
                             <th>Message</th>
                         </tr>
                         <?php while ($row = $result->fetch_assoc()): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($row['admin_id']); ?></td>
-                                <td><?php echo htmlspecialchars($row['admin_name']); ?></td>
+                                <td><?php echo htmlspecialchars($row['rector_id']); ?></td>
+                                <td><?php echo htmlspecialchars($row['rector_name']); ?></td>
                                 <td><?php echo htmlspecialchars($row['created_at']); ?></td>
                                 <td><?php echo htmlspecialchars($row['message']); ?></td>
                             </tr>

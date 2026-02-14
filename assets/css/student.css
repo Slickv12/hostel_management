@@ -1,0 +1,8 @@
+/* Student-specific lightweight overrides */
+.content-box h2 {
+  color: #e8f9fb;
+}
+
+.sidebar h2 {
+  color: #f0fbff;
+}
