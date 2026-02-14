@@ -46,13 +46,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bind_param("isss", $user_id, $reason, $start_date, $end_date);
 
             if ($stmt->execute()) {
-                $_SESSION["success_message"] = "Leave request submitted successfully!";
-                header("Location: sdashboard.php");
-                exit();
+                $success = "Leave request submitted successfully!";
             } else {
-                $_SESSION["error_message"] = "Error submitting request: " . $stmt->error;
-                header("Location: sdashboard.php");
-                exit();
+                $error = "Error submitting request: " . $stmt->error;
             }
             $stmt->close();
         }
@@ -60,42 +56,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $overlap_stmt->close();
     }
 }
-
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leave Request</title>
-    <link rel="stylesheet" href="dashstyle.css">
-</head>
-<body>
+<div class="content-box">
+    <h2>Leave Request</h2>
 
-<div class="dashboard-container">
-    <div class="content">
-        <div class="content-box">
-            <h2>Leave Request</h2>
+    <?php if (!empty($error)) echo "<p class='error-msg'>" . htmlspecialchars($error) . "</p>"; ?>
+    <?php if (!empty($success)) echo "<p class='success-msg'>" . htmlspecialchars($success) . "</p>"; ?>
 
-            <?php if (!empty($error)) echo "<p class='error-msg'>" . htmlspecialchars($error) . "</p>"; ?>
-            <?php if (!empty($success)) echo "<p class='success-msg'>" . htmlspecialchars($success) . "</p>"; ?>
+    <form method="POST" action="leave_request.php">
+        <label for="reason">Reason:</label>
+        <textarea name="reason" id="reason" required></textarea>
 
-            <form method="POST" action="leave_request.php">
-                <label for="reason">Reason:</label>
-                <textarea name="reason" id="reason" required></textarea>
+        <label for="start_date">Start Date:</label>
+        <input type="date" name="start_date" id="start_date" required>
 
-                <label for="start_date">Start Date:</label>
-                <input type="date" name="start_date" id="start_date" required>
+        <label for="end_date">End Date:</label>
+        <input type="date" name="end_date" id="end_date" required>
 
-                <label for="end_date">End Date:</label>
-                <input type="date" name="end_date" id="end_date" required>
-
-                <button type="submit">Submit Request</button>
-            </form>
-        </div>
-    </div>
+        <button type="submit">Submit Request</button>
+    </form>
 </div>
-
-</body>
-</html>

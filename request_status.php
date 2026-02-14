@@ -34,69 +34,52 @@ $stmt->execute();
 $result = $stmt->get_result();
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Request Status</title>
-    <link rel="stylesheet" href="dashstyle.css">
-</head>
-<body>
+<div class="content-box">
+    <h2>My Leave Requests</h2>
 
-<div class="dashboard-container">
-    <div class="content">
-        <div class="content-box">
-            <h2>My Leave Requests</h2>
+    <?php if (!empty($message)): ?>
+        <p class="<?php echo (strpos($message, 'successfully') !== false) ? 'success-msg' : 'error-msg'; ?>">
+            <?php echo htmlspecialchars($message); ?>
+        </p>
+    <?php endif; ?>
 
-            <?php if (!empty($message)): ?>
-                <p class="<?php echo (strpos($message, 'successfully') !== false) ? 'success-msg' : 'error-msg'; ?>">
-                    <?php echo htmlspecialchars($message); ?>
-                </p>
-            <?php endif; ?>
+    <table>
+        <thead>
+            <tr>
+                <th>Request ID</th>
+                <th>Reason</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php while ($row = $result->fetch_assoc()): ?>
+                <tr>
+                    <td><?= htmlspecialchars($row["request_id"]) ?></td>
+                    <td><?= nl2br(htmlspecialchars($row["reason"])) ?></td>
+                    <td><?= htmlspecialchars($row["start_date"]) ?></td>
+                    <td><?= htmlspecialchars($row["end_date"]) ?></td>
+                    <td class="<?= htmlspecialchars($row["status"]) ?>">
+                        <?= ucfirst(htmlspecialchars($row["status"])) ?>
+                    </td>
+                    <td>
+                        <?php if ($row['status'] === 'pending'): ?>
+                            <form method="POST" action="request_status.php" style="margin:0;">
+                                <input type="hidden" name="cancel_request_id" value="<?= (int)$row['request_id'] ?>">
+                                <button type="submit">Cancel</button>
+                            </form>
+                        <?php else: ?>
+                            -
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endwhile; ?>
+        </tbody>
+    </table>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Request ID</th>
-                        <th>Reason</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while ($row = $result->fetch_assoc()): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($row["request_id"]) ?></td>
-                            <td><?= nl2br(htmlspecialchars($row["reason"])) ?></td>
-                            <td><?= htmlspecialchars($row["start_date"]) ?></td>
-                            <td><?= htmlspecialchars($row["end_date"]) ?></td>
-                            <td class="<?= htmlspecialchars($row["status"]) ?>">
-                                <?= ucfirst(htmlspecialchars($row["status"])) ?>
-                            </td>
-                            <td>
-                                <?php if ($row['status'] === 'pending'): ?>
-                                    <form method="POST" action="request_status.php" style="margin:0;">
-                                        <input type="hidden" name="cancel_request_id" value="<?= (int)$row['request_id'] ?>">
-                                        <button type="submit">Cancel</button>
-                                    </form>
-                                <?php else: ?>
-                                    -
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
-
-            <?php if ($result->num_rows == 0): ?>
-                <p style="text-align:center; color:gray;">No leave requests found.</p>
-            <?php endif; ?>
-        </div>
-    </div>
+    <?php if ($result->num_rows == 0): ?>
+        <p style="text-align:center; color:gray;">No leave requests found.</p>
+    <?php endif; ?>
 </div>
-
-</body>
-</html>
