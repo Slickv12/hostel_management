@@ -32,30 +32,48 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="public.css">
 </head>
 <body id="register-body">
-    <div class="container">
-        <h2>Register</h2>
-        <form action="register.php" method="POST">
-            <label>Username</label>
-            <input type="text" name="name" required>
+    <header class="public-header">
+        <nav class="public-nav">
+            <ul>
+                <li><a href="index.php">Home</a></li>
+                <li><a href="about.php">About Us</a></li>
+                <li><a href="fee_structure.php">Fee Structure</a></li>
+                <li><a href="login.php">Login</a></li>
+                <li><a href="register.php" class="active">Register</a></li>
+            </ul>
+        </nav>
+    </header>
 
-            <label>Email</label>
-            <input type="email" name="email" required>
+    <div class="public-auth-wrap">
+        <div class="public-auth-card">
+            <h2>Register</h2>
+            <form action="register.php" method="POST">
+                <label>Username</label>
+                <input type="text" name="name" required>
 
-            <label>Password</label>
-            <input type="password" name="password" required>
+                <label>Email</label>
+                <input type="email" name="email" required>
 
-            <label>Phone</label>
-            <input type="text" name="phone" required>
+                <label>Password</label>
+                <input type="password" name="password" required>
 
-            <label>Address</label>
-            <input type="text" name="address" required>
+                <label>Phone</label>
+                <input type="text" name="phone" required>
 
-            <button type="submit">Register</button>
-        </form>
-        <a href="login.php">Already have an account? Login here</a>
+                <label>Address</label>
+                <input type="text" name="address" required>
+
+                <button type="submit">Register</button>
+            </form>
+            <a href="login.php">Already have an account? Login here</a>
+        </div>
     </div>
+
+    <footer class="public-footer">
+        <p>&copy; 2025 Hostel Management System. All rights reserved.</p>
+    </footer>
 </body>
 </html>

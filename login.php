@@ -58,24 +58,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="public.css">
 </head>
 <body>
-    <div class="container">
-        <h2>Login</h2>
-        <?php if (!empty($error_message)): ?>
-            <div class="error-message"><?php echo $error_message; ?></div>
-        <?php endif; ?>
-        <form method="POST" action="">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>
+    <header class="public-header">
+        <nav class="public-nav">
+            <ul>
+                <li><a href="index.php">Home</a></li>
+                <li><a href="about.php">About Us</a></li>
+                <li><a href="fee_structure.php">Fee Structure</a></li>
+                <li><a href="login.php" class="active">Login</a></li>
+                <li><a href="register.php">Register</a></li>
+            </ul>
+        </nav>
+    </header>
 
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
+    <div class="public-auth-wrap">
+        <div class="public-auth-card">
+            <h2>Login</h2>
+            <?php if (!empty($error_message)): ?>
+                <div class="error-message"><?php echo $error_message; ?></div>
+            <?php endif; ?>
+            <form method="POST" action="">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
 
-            <button type="submit">Login</button>
-        </form>
-        <a href="register.php">Don't have an account? Register here</a>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+
+                <button type="submit">Login</button>
+            </form>
+            <a href="register.php">Don't have an account? Register here</a>
+        </div>
     </div>
+
+    <footer class="public-footer">
+        <p>&copy; 2025 Hostel Management System. All rights reserved.</p>
+    </footer>
 </body>
 </html>
